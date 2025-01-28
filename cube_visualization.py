@@ -35,8 +35,10 @@ class CubeVisualization:
         pygame.display.set_mode((800, 600), DOUBLEBUF | OPENGL)
         gluPerspective(45, (800 / 600), 0.1, 50.0)
         glTranslatef(0.0, 0.0, -4)
-        # Configurar el fondo blanco
-        glClearColor(1.0, 1.0, 1.0, 1.0)  # Blanco RGBA
+
+        # Configurar OpenGL
+        glEnable(GL_DEPTH_TEST)  # Habilitar el buffer de profundidad
+        glClearColor(1.0, 1.0, 1.0, 1.0)  # Fondo blanco
 
     def draw_face(self, grid, position, rotation, color):
         """
@@ -97,43 +99,6 @@ class CubeVisualization:
             grid = self.cellular_automata_list[face_idx].grid
             color = self.face_colors[face_idx]
             self.draw_face(grid, position, rotation, color)
-
-    # def handle_rotation(self, events):
-    #     """
-    #     Maneja la rotación del cubo basada en las teclas presionadas.
-
-    #     Args:
-    #         events (list): Lista de eventos capturados por Pygame.
-    #     """
-    #     for event in events:
-    #         if event.type == pygame.KEYDOWN:
-    #             if event.key == pygame.K_LEFT:
-    #                 self.rotation_y -= 5  # Rotar a la izquierda
-    #             elif event.key == pygame.K_RIGHT:
-    #                 self.rotation_y += 5  # Rotar a la derecha
-    #             elif event.key == pygame.K_UP:
-    #                 self.rotation_x -= 5  # Rotar hacia arriba
-    #             elif event.key == pygame.K_DOWN:
-    #                 self.rotation_x += 5  # Rotar hacia abajo
-
-    # def render(self, events):
-    #     """
-    #     Renderiza el cubo, aplicando la rotación acumulada.
-
-    #     Args:
-    #         events (list): Lista de eventos capturados por Pygame.
-    #     """
-    #     self.handle_rotation(events)
-
-    #     # Limpiar el buffer y aplicar las rotaciones
-    #     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    #     glPushMatrix()
-    #     glRotatef(self.rotation_x, 1, 0, 0)
-    #     glRotatef(self.rotation_y, 0, 1, 0)
-
-    #     # Dibujar el cubo
-    #     self.draw_cube()
-    #     glPopMatrix()
 
     def render(self):
         """

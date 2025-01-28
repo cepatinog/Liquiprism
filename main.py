@@ -13,7 +13,7 @@ import time
 MIDI_PORT = "MIDI_OUT 1"  # Puerto MIDI virtual creado con loopMIDI
 MIDI_CHANNELS = [0, 1, 2, 3, 4, 5]  # Canales MIDI para las caras
 GRID_SIZE = 5  # Tamaño de cada cuadrícula (5x5)
-UPDATE_INTERVAL = 0.5  # Intervalo entre actualizaciones (en segundos)
+UPDATE_INTERVALS = [0.5, 0.6, 0.4, 0.8, 0.7, 0.5]  # Velocidades independientes por cara
 
 def main():
     """
@@ -33,8 +33,8 @@ def main():
     # Inicializar la sonificación
     sonification = Sonification(midi_port_name=MIDI_PORT, midi_channels=MIDI_CHANNELS)
 
-    # Temporizador para controlar el intervalo de actualizaciones
-    last_update_time = time.time()
+    # Temporizadores independientes para cada cara
+    last_update_times = [time.time()] * len(faces)
 
     try:
         print("Sistema iniciado. Presiona Ctrl + C para salir.")
@@ -49,15 +49,14 @@ def main():
 
             # Controlar la frecuencia de actualizaciones con UPDATE_INTERVAL
             current_time = time.time()
-            if current_time - last_update_time >= UPDATE_INTERVAL:
-                last_update_time = current_time
-
-                # Actualizar las caras del cubo
-                for face_id, face in enumerate(faces):
+            for face_id, face in enumerate(faces):
+                # Verificar si es hora de actualizar la cara
+                if current_time - last_update_times[face_id] >= UPDATE_INTERVALS[face_id]:
+                    last_update_times[face_id] = current_time
                     face.update(face_id, faces)
 
-                # Generar eventos MIDI
-                sonification.generate_all_midi_events(faces)
+            # Generar eventos MIDI
+            sonification.generate_all_midi_events(faces)
 
             # Renderizar la visualización
             visualization.render()
