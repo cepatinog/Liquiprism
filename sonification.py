@@ -1,9 +1,10 @@
 from mido import Message, open_output
+import time
 
 class Sonification:
     """Clase para generar y enviar mensajes MIDI basados en autómatas celulares."""
 
-    def __init__(self, midi_port_name, midi_channels, max_notes=2):
+    def __init__(self, midi_port_name, midi_channels, max_notes=2, velocity=80):
         """
         Inicializa el sistema de sonificación.
 
@@ -15,6 +16,7 @@ class Sonification:
         self.midi_port_name = midi_port_name
         self.midi_channels = midi_channels
         self.max_notes = max_notes
+        self.velocity = velocity
 
         try:
             self.output_port = open_output(midi_port_name)
@@ -36,9 +38,14 @@ class Sonification:
             note = 60 + cell[0] + cell[1]  # Calcula el tono (C4 como base)
             channel = self.midi_channels[face_id]
 
-            # Enviar mensajes de nota on/off
-            self.output_port.send(Message('note_on', channel=channel, note=note, velocity=64))
-            self.output_port.send(Message('note_off', channel=channel, note=note, velocity=64, time=500))
+            try:
+                # Enviar mensajes de nota on/off
+                self.output_port.send(Message('note_on', channel=channel, note=note, velocity=self.velocity))
+                #time.sleep(0.05)  # Pausar brevemente antes de enviar note_off
+                self.output_port.send(Message('note_off', channel=channel, note=note, velocity=0))
+            except Exception as e:
+                print(f"Error al enviar mensaje MIDI: {e}")
+
 
     def generate_all_midi_events(self, faces):
         """

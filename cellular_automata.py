@@ -151,4 +151,14 @@ class CellularAutomata:
 
         return neighbors    
     
-    
+    def perturb(self, intensity=3):
+        """
+        Aplica una perturbación al sistema alterando aleatoriamente algunas celdas.
+
+        Args:
+            intensity (int): Número de celdas que serán modificadas.
+        """
+        for _ in range(intensity):
+            x = random.randint(0, self.grid_size - 1)
+            y = random.randint(0, self.grid_size - 1)
+            self.grid[x][y] = 1 if self.grid[x][y] == 0 else 0  # Invertir estado de la celda
