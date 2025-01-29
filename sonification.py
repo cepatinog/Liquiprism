@@ -2,16 +2,16 @@ from mido import Message, open_output
 import time
 
 class Sonification:
-    """Clase para generar y enviar mensajes MIDI basados en autómatas celulares."""
+    """Class to generate and send MIDI messages based on cellular automata."""
 
     def __init__(self, midi_port_name, midi_channels, max_notes=2, velocity=80):
         """
-        Inicializa el sistema de sonificación.
+        Initializes the sonification system.
 
         Args:
-            midi_port_name (str): Nombre del puerto MIDI de salida.
-            midi_channels (list): Lista de canales MIDI para cada cara.
-            max_notes (int): Máximo de notas simultáneas por cara.
+            midi_port_name (str): Name of the MIDI output port.
+            midi_channels (list): List of MIDI channels for each face.
+            max_notes (int): Maximum number of simultaneous notes per face.
         """
         self.midi_port_name = midi_port_name
         self.midi_channels = midi_channels
@@ -21,45 +21,45 @@ class Sonification:
         try:
             self.output_port = open_output(midi_port_name)
         except IOError as e:
-            raise RuntimeError(f"No se pudo abrir el puerto MIDI '{midi_port_name}': {e}")
+            raise RuntimeError(f"Could not open MIDI port '{midi_port_name}': {e}")
 
     def generate_midi_event(self, face_id, active_cells):
         """
-        Genera y envía mensajes MIDI para una cara específica del cubo.
+        Generates and sends MIDI messages for a specific face of the cube.
 
         Args:
-            face_id (int): Índice de la cara del cubo.
-            active_cells (list): Lista de coordenadas de células activas [(x, y), ...].
+            face_id (int): Index of the cube face.
+            active_cells (list): List of coordinates of active cells [(x, y), ...].
         """
-        max_events_per_face = self.max_notes  # Máximo de eventos por cara
-        # Limitar el número de células activas
+        max_events_per_face = self.max_notes  # Maximum events per face
+        # Limit the number of active cells
         active_cells = active_cells[:max_events_per_face]
 
         for cell in active_cells:
-            note = 60 + cell[0] + cell[1]  # Calcula el tono (C4 como base)
+            note = 60 + cell[0] + cell[1]  # Calculate pitch (C4 as a base)
             channel = self.midi_channels[face_id]
 
             try:
-                # Enviar mensajes de nota on/off
+                # Send note on/off messages
                 self.output_port.send(Message('note_on', channel=channel, note=note, velocity=self.velocity))
-                #time.sleep(0.001)  # Pausar brevemente antes de enviar note_off
-                self.output_port.send(Message('note_off', channel=channel, note=note, velocity=0))
+                #time.sleep(0.001)  # Briefly pause before sending note_off
+                self.output_port.send(Message('note_off', channel=channel, note=note, velocity=0, time=100))
             except Exception as e:
-                print(f"Error al enviar mensaje MIDI: {e}")
+                print(f"Error sending MIDI message: {e}")
 
-        #print(f"Eventos MIDI enviados en cara {face_id}: {len(active_cells)}")  # Diagnóstico
+        #print(f"MIDI events sent on face {face_id}: {len(active_cells)}")  # Diagnostic
 
     def generate_all_midi_events(self, faces):
         """
-        Genera y envía mensajes MIDI para todas las caras del cubo.
+        Generates and sends MIDI messages for all cube faces.
 
         Args:
-            faces (list): Lista de instancias de CellularAutomata.
+            faces (list): List of CellularAutomata instances.
         """
 
-        total_midi_events = 0  # Contador de eventos MIDI generados
+        total_midi_events = 0  # Counter for generated MIDI events
         for face_id, face in enumerate(faces):
-            # Identificar celdas que cambiaron de OFF → ON
+            # Identify cells that changed from OFF → ON
             active_cells = [
                 (x, y)
                 for x in range(face.grid_size)
@@ -67,14 +67,14 @@ class Sonification:
                 if face.previous_grid[x][y] == 0 and face.grid[x][y] == 1
             ]
 
-            # Contar eventos antes de enviarlos
+            # Count events before sending them
             total_midi_events += len(active_cells)
             self.generate_midi_event(face_id, active_cells)
-        #print(f"Eventos MIDI enviados en esta iteración: {total_midi_events}")  # Diagnóstico
+        #print(f"MIDI events sent in this iteration: {total_midi_events}")  # Diagnostic
         
     def close(self):
-        """Cierra el puerto MIDI."""
+        """Closes the MIDI port."""
         try:
             self.output_port.close()
         except Exception as e:
-            print(f"Error al cerrar el puerto MIDI: {e}")
+            print(f"Error closing MIDI port: {e}")

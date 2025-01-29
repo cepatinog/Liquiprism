@@ -11,45 +11,46 @@ CUBE_NEIGHBORS = {
 
 
 class CellularAutomata:
-    """Clase para modelar una cuadrícula de autómatas celulares."""
+    """Class to model a cellular automaton grid."""
 
     def __init__(self, grid_size: int):
 
         """
-        Inicializa una cuadrícula vacía de autómatas celulares.
+        Initializes an empty cellular automaton grid.
         
         Args:
-            grid_size (int): Tamaño de la cuadrícula (e.g.m 10 para 10x10)
+            grid_size (int): Grid size (e.g., 10 for a 10x10 grid).
         """
+
 
         self.grid_size = grid_size
         self.grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
         self.previous_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
-        self.activity_count = 0  # Contador de cambios de estado por iteración
+        self.activity_count = 0  # Counter for state changes per iteration
 
     def randomize(self):
-        """Llena la cuadrícula con valores aleatorios (0 o 1)."""
+        """Fills the grid with random values (0 or 1)."""
         self.grid = [[random.randint(0, 1) for _ in range(self.grid_size)] for _ in range(self.grid_size)]
 
     def display(self):
-        """Muestra la cuadrícula en consola."""
+        """Displays the grid in the console."""
         for row in self.grid:
             print(" ".join(str(cell) for cell in row))
 
     def update(self, face_id: int, all_faces: list, use_stochastic_rule: bool = False):
         """
-        Actualiza la cuadrícula según las reglas, considerando las conexiones con otras caras.
+        Updates the grid according to the rules, considering the connections with other faces.
 
         Args:
-            face_id (int): ID de la cara actual.
-            all_faces (list): Lista de todas las caras del cubo.
+            face_id (int): ID of the current face.
+            all_faces (list): List of all cube faces.
         """
         new_grid = [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         self.activity_count = 0
 
         for x in range(self.grid_size):
             for y in range(self.grid_size):
-                # Obtener vecinos, incluyendo conexiones entre caras
+                # Get neighbors, including connections between faces
                 neighbors = self._get_neighbors(x, y, face_id, all_faces)
                 current_state = self.grid[x][y]
 
@@ -62,74 +63,69 @@ class CellularAutomata:
                     self.activity_count += 1
                 new_grid[x][y] = new_state
 
-        # Almacenar el estado actual como el estado anterior antes de actualizar
+        # Store the current state as the previous state before updating
         self.previous_grid = [row[:] for row in self.grid]
         self.grid = new_grid
-        
-        # print(f"Actualizando cara {face_id}")
-        # for row in self.grid:
-        #     print(row)
-        
 
 
     def rule_set_1(self, current_state: int, neighbors: list) -> int:
         """
-        Regla convencional para actualizar una célula.
+        Conventional rule to update a cell.
 
         Args:
-            current_state (int): Estado actual de la célula (0 o 1).
-            neighbors (list): Lista de estados de los vecinos.
+            current_state (int): Current state of the cell (0 or 1).
+            neighbors (list): List of neighboring states.
 
         Returns:
-            int: Nuevo estado de la célula (0 o 1).
+            int: New state of the cell (0 or 1).
         """
         alive_neighbors = sum(neighbors)
 
-        if current_state == 1:  # Célula viva
+        if current_state == 1:  # Living cell
             return 1 if alive_neighbors in (2, 3) else 0
-        else:  # Célula muerta
+        else:  # Dead cell
             return 1 if alive_neighbors == 4 else 0
 
     def rule_set_2(self, current_state: int, x: int, y: int, neighbors: list) -> int:
         """
-        Regla estocástica para actualizar una célula.
+        Stochastic rule to update a cell.
 
         Args:
-            x (int): Coordenada x de la célula.
-            y (int): Coordenada y de la célula.
-            neighbors (list): Lista de estados de los vecinos.
+            x (int): x-coordinate of the cell.
+            y (int): y-coordinate of the cell.
+            neighbors (list): List of neighboring states.
 
         Returns:
-            int: Nuevo estado de la célula (0 o 1).
+            int: New state of the cell (0 or 1).
         """
         alive_neighbors = sum(neighbors)
         below_neighbor = self.grid[x + 1][y] if x + 1 < self.grid_size else 0
 
-        if current_state == 1:  # Célula viva
+        if current_state == 1:  # Living cell
             return 1 if alive_neighbors in (2, 3) else 0
-        else:  # Célula muerta
+        else:  # Dead cell  
             return 1 if below_neighbor == 1 and random.random() < 0.33 else 0
         
     def _get_neighbors(self, x: int, y: int, face_id: int, all_faces: list) -> list:
         """
-        Obtiene los vecinos de una célula, incluyendo los bordes que interactúan con las caras vecinas.
+        Retrieves the neighbors of a cell, including border cells interacting with neighboring faces.
 
         Args:
-            x (int): Coordenada x de la célula.
-            y (int): Coordenada y de la célula.
-            face_id (int): ID de la cara actual.
-            all_faces (list): Lista de todas las caras del cubo (instancias de CellularAutomata).
+            x (int): x-coordinate of the cell.
+            y (int): y-coordinate of the cell.
+            face_id (int): ID of the current face.
+            all_faces (list): List of all cube faces (instances of CellularAutomata).
 
         Returns:
-            list: Lista de estados de los vecinos.
+            list: List of neighboring cell states.
         """
         neighbors = []
 
-        # Validar caras vecinas
+        # Validate neighboring faces
         if face_id not in CUBE_NEIGHBORS or not all_faces:
             raise ValueError("CUBE_NEIGHBORS o all_faces están mal configurados.")
 
-        # Obtener vecinos dentro de la misma cara
+        # Get neighbors within the same face
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
                 if i == x and j == y:
@@ -137,28 +133,28 @@ class CellularAutomata:
                 if 0 <= i < self.grid_size and 0 <= j < self.grid_size:
                     neighbors.append(self.grid[i][j])
 
-        # Obtener vecinos de las caras vecinas
+        # Get neighbors from adjacent faces
         for direction, neighbor_face_id in CUBE_NEIGHBORS[face_id].items():
             neighbor_face = all_faces[neighbor_face_id]
-            if direction == "up" and x == 0:  # Borde superior
-                neighbors.extend(neighbor_face.grid[-1][y:y+1])  # Última fila de la cara vecina
-            elif direction == "down" and x == self.grid_size - 1:  # Borde inferior
-                neighbors.extend(neighbor_face.grid[0][y:y+1])  # Primera fila de la cara vecina
-            elif direction == "left" and y == 0:  # Borde izquierdo
-                neighbors.append(neighbor_face.grid[x][-1])  # Última columna de la cara vecina
-            elif direction == "right" and y == self.grid_size - 1:  # Borde derecho
-                neighbors.append(neighbor_face.grid[x][0])  # Primera columna de la cara vecina
+            if direction == "up" and x == 0:  # Top border
+                neighbors.extend(neighbor_face.grid[-1][y:y+1])  # Last row of the neighboring face
+            elif direction == "down" and x == self.grid_size - 1:  # Bottom border
+                neighbors.extend(neighbor_face.grid[0][y:y+1])  # First row of the neighboring face
+            elif direction == "left" and y == 0:  # Left border
+                neighbors.append(neighbor_face.grid[x][-1])  # Last column of the neighboring face
+            elif direction == "right" and y == self.grid_size - 1:  # Right border
+                neighbors.append(neighbor_face.grid[x][0])  # First column of the neighboring face
 
         return neighbors    
     
     def perturb(self, intensity=3):
         """
-        Aplica una perturbación al sistema alterando aleatoriamente algunas celdas.
+        Applies a perturbation to the system by randomly altering some cells.
 
         Args:
-            intensity (int): Número de celdas que serán modificadas.
+            intensity (int): Number of cells to be modified.
         """
         for _ in range(intensity):
             x = random.randint(0, self.grid_size - 1)
             y = random.randint(0, self.grid_size - 1)
-            self.grid[x][y] = 1 if self.grid[x][y] == 0 else 0  # Invertir estado de la celda
+            self.grid[x][y] = 1 if self.grid[x][y] == 0 else 0  # Invert cell state
