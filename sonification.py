@@ -31,8 +31,9 @@ class Sonification:
             face_id (int): Índice de la cara del cubo.
             active_cells (list): Lista de coordenadas de células activas [(x, y), ...].
         """
+        max_events_per_face = self.max_notes  # Máximo de eventos por cara
         # Limitar el número de células activas
-        active_cells = active_cells[:self.max_notes]
+        active_cells = active_cells[:max_events_per_face]
 
         for cell in active_cells:
             note = 60 + cell[0] + cell[1]  # Calcula el tono (C4 como base)
@@ -41,11 +42,12 @@ class Sonification:
             try:
                 # Enviar mensajes de nota on/off
                 self.output_port.send(Message('note_on', channel=channel, note=note, velocity=self.velocity))
-                #time.sleep(0.05)  # Pausar brevemente antes de enviar note_off
+                #time.sleep(0.001)  # Pausar brevemente antes de enviar note_off
                 self.output_port.send(Message('note_off', channel=channel, note=note, velocity=0))
             except Exception as e:
                 print(f"Error al enviar mensaje MIDI: {e}")
 
+        #print(f"Eventos MIDI enviados en cara {face_id}: {len(active_cells)}")  # Diagnóstico
 
     def generate_all_midi_events(self, faces):
         """
@@ -54,6 +56,8 @@ class Sonification:
         Args:
             faces (list): Lista de instancias de CellularAutomata.
         """
+
+        total_midi_events = 0  # Contador de eventos MIDI generados
         for face_id, face in enumerate(faces):
             # Identificar celdas que cambiaron de OFF → ON
             active_cells = [
@@ -62,8 +66,12 @@ class Sonification:
                 for y in range(face.grid_size)
                 if face.previous_grid[x][y] == 0 and face.grid[x][y] == 1
             ]
+
+            # Contar eventos antes de enviarlos
+            total_midi_events += len(active_cells)
             self.generate_midi_event(face_id, active_cells)
-    
+        #print(f"Eventos MIDI enviados en esta iteración: {total_midi_events}")  # Diagnóstico
+        
     def close(self):
         """Cierra el puerto MIDI."""
         try:
