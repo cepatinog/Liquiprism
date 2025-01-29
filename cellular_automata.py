@@ -24,6 +24,8 @@ class CellularAutomata:
 
         self.grid_size = grid_size
         self.grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+        self.previous_grid = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+        self.activity_count = 0  # Contador de cambios de estado por iteración
 
     def randomize(self):
         """Llena la cuadrícula con valores aleatorios (0 o 1)."""
@@ -34,7 +36,7 @@ class CellularAutomata:
         for row in self.grid:
             print(" ".join(str(cell) for cell in row))
 
-    def update(self, face_id: int, all_faces: list):
+    def update(self, face_id: int, all_faces: list, use_stochastic_rule: bool = False):
         """
         Actualiza la cuadrícula según las reglas, considerando las conexiones con otras caras.
 
@@ -43,28 +45,39 @@ class CellularAutomata:
             all_faces (list): Lista de todas las caras del cubo.
         """
         new_grid = [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self.activity_count = 0
 
         for x in range(self.grid_size):
             for y in range(self.grid_size):
                 # Obtener vecinos, incluyendo conexiones entre caras
                 neighbors = self._get_neighbors(x, y, face_id, all_faces)
+                current_state = self.grid[x][y]
 
-                # Usar la regla para determinar el nuevo estado
-                new_grid[x][y] = self.rule_set(self.grid[x][y], neighbors)
-        
-        print(f"Actualizando cara {face_id}")
-        for row in self.grid:
-            print(row)
-        
+                if use_stochastic_rule:
+                    new_state = self.rule_set_2(current_state, x, y, neighbors)
+                else:
+                    new_state = self.rule_set_1(current_state, neighbors)
+
+                if new_state != current_state:
+                    self.activity_count += 1
+                new_grid[x][y] = new_state
+
+        # Almacenar el estado actual como el estado anterior antes de actualizar
+        self.previous_grid = [row[:] for row in self.grid]
         self.grid = new_grid
+        
+        # print(f"Actualizando cara {face_id}")
+        # for row in self.grid:
+        #     print(row)
+        
 
 
-    def rule_set(self, cell_state: int, neighbors: list) -> int:
+    def rule_set_1(self, current_state: int, neighbors: list) -> int:
         """
-        Regla para determinar el estado de una célula en la siguiente iteración.
+        Regla convencional para actualizar una célula.
 
         Args:
-            cell_state (int): Estado actual de la célula (0 o 1).
+            current_state (int): Estado actual de la célula (0 o 1).
             neighbors (list): Lista de estados de los vecinos.
 
         Returns:
@@ -72,10 +85,30 @@ class CellularAutomata:
         """
         alive_neighbors = sum(neighbors)
 
-        if cell_state == 1:  # Célula viva
+        if current_state == 1:  # Célula viva
             return 1 if alive_neighbors in (2, 3) else 0
         else:  # Célula muerta
-            return 1 if alive_neighbors == 3 else 0
+            return 1 if alive_neighbors == 4 else 0
+
+    def rule_set_2(self, current_state: int, x: int, y: int, neighbors: list) -> int:
+        """
+        Regla estocástica para actualizar una célula.
+
+        Args:
+            x (int): Coordenada x de la célula.
+            y (int): Coordenada y de la célula.
+            neighbors (list): Lista de estados de los vecinos.
+
+        Returns:
+            int: Nuevo estado de la célula (0 o 1).
+        """
+        alive_neighbors = sum(neighbors)
+        below_neighbor = self.grid[x + 1][y] if x + 1 < self.grid_size else 0
+
+        if current_state == 1:  # Célula viva
+            return 1 if alive_neighbors in (2, 3) else 0
+        else:  # Célula muerta
+            return 1 if below_neighbor == 1 and random.random() < 0.33 else 0
         
     def _get_neighbors(self, x: int, y: int, face_id: int, all_faces: list) -> list:
         """
@@ -91,6 +124,10 @@ class CellularAutomata:
             list: Lista de estados de los vecinos.
         """
         neighbors = []
+
+        # Validar caras vecinas
+        if face_id not in CUBE_NEIGHBORS or not all_faces:
+            raise ValueError("CUBE_NEIGHBORS o all_faces están mal configurados.")
 
         # Obtener vecinos dentro de la misma cara
         for i in range(x - 1, x + 2):

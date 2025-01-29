@@ -15,7 +15,11 @@ class Sonification:
         self.midi_port_name = midi_port_name
         self.midi_channels = midi_channels
         self.max_notes = max_notes
-        self.output_port = open_output(midi_port_name)
+
+        try:
+            self.output_port = open_output(midi_port_name)
+        except IOError as e:
+            raise RuntimeError(f"No se pudo abrir el puerto MIDI '{midi_port_name}': {e}")
 
     def generate_midi_event(self, face_id, active_cells):
         """
@@ -44,11 +48,18 @@ class Sonification:
             faces (list): Lista de instancias de CellularAutomata.
         """
         for face_id, face in enumerate(faces):
+            # Identificar celdas que cambiaron de OFF → ON
             active_cells = [
-                (x, y) for x in range(face.grid_size) for y in range(face.grid_size) if face.grid[x][y] == 1
+                (x, y)
+                for x in range(face.grid_size)
+                for y in range(face.grid_size)
+                if face.previous_grid[x][y] == 0 and face.grid[x][y] == 1
             ]
             self.generate_midi_event(face_id, active_cells)
     
     def close(self):
         """Cierra el puerto MIDI."""
-        self.output_port.close()
+        try:
+            self.output_port.close()
+        except Exception as e:
+            print(f"Error al cerrar el puerto MIDI: {e}")

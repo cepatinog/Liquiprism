@@ -105,8 +105,8 @@ class CubeVisualization:
         Renderiza el cubo, aplicando rotación automática.
         """
         # Incrementar la rotación acumulativa
-        self.rotation_x += 0.1  # Ajusta este valor para cambiar la velocidad
-        self.rotation_y += 0.1
+        self.rotation_x = (self.rotation_x + 0.1) % 360
+        self.rotation_y = (self.rotation_y + 0.1) % 360
 
         # Limpiar el buffer y aplicar las rotaciones acumuladas
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
